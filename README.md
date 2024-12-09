@@ -1,2 +1,2 @@
 # repoOne
-First side project made at UCLA
+Experimenting with GitHub

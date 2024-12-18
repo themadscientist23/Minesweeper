@@ -1,5 +1,7 @@
-# repoOne
-Experimenting with GitHub and stuff
+# Minesweeper
+
+
+Basic Minesweeper done in termianl
 
 
 

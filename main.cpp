@@ -4,7 +4,7 @@ using namespace std;
 
 class Cell{
     public:
-        Cell(int value, bool bomb);
+        Cell(int value, bool bomb, bool opened);
         int getValue() const;
         bool placeFlag() const;
         bool getFlag() const;

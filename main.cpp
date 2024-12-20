@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include <cmath>
+#include <ctime>
 using namespace std;
 
 class Cell;
@@ -44,6 +45,8 @@ class Board{
         void processMove(int row, int col);
         bool unopened(int row, int col) const;
         void handleFirstClick(int row, int col);
+        void floodFill(int row, int col);
+        bool checkGameStatus();
     private: 
         Game* m_game;
         Cell** m_grid;
@@ -76,6 +79,7 @@ int main(){
 Cell::Cell()
 {
     m_display_value = 'O';
+    m_flagged = false;
 }
 
 Cell::Cell(bool bomb, Board *board)
@@ -132,6 +136,7 @@ void Cell::setDisplayValue(char val)
 
 void Cell::openCell()
 {
+    if(m_flagged) return;
     if(isBomb()){
         m_board->bombOpened();
     }
@@ -142,24 +147,13 @@ void Cell::openCell()
 
 Board::Board(Game* game, int rows, int cols)
 {
+    srand(time(0));
     m_game = game;
     m_rows = rows;
     m_cols = cols;
     m_grid = new Cell*[rows];
     for(int i = 0; i < rows; i++){
         m_grid[i] = new Cell[cols]{Cell(false, this)};
-    }
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < cols; j++){
-            double bombRatio = (sqrt(rows*cols)/(rows*cols)) * 100;
-            bool bomb = (rand() % 100 < bombRatio);
-            m_grid[i][j] = Cell(bomb, this);
-        }
-    }
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < cols; j++){
-            calculateValue(i, j);
-        }
     }
     bombsFlagged = 0;
 }
@@ -207,10 +201,12 @@ void Board::bombOpened()
 
 void Board::displayBoard()
 {
-    cout << "-----------------------" << endl;
-    for(int i = 0; i < m_rows; i++){
+    cout << "-----------------------" << endl << "    ";
+    for(int i = -1; i < m_rows; i++){
+        if(i != -1) cout << i << " | ";
         for(int j = 0; j < m_cols; j++){
-            if(!m_game->getGameVal()){
+            if(i == -1) cout << j << " ";
+            else if(!m_game->getGameVal()){
                 if(m_grid[i][j].getFlag()) cout << "F" << " ";
                 else cout << m_grid[i][j].getDisplayValue() << " ";
 
@@ -229,7 +225,8 @@ void Board::flagCell(int row, int col)
 
 void Board::processMove(int row, int col)
 {
-    m_grid[row][col].openCell();
+    if(m_grid[row][col].getValue() == ' ') floodFill(row, col);
+    else m_grid[row][col].openCell();
 
 }
 
@@ -240,13 +237,57 @@ bool Board::unopened(int row, int col) const
 
 
 void Board::handleFirstClick(int row, int col){
+    int r, c;
     while(!m_game->checkMove(row, col)){
         cout << "Not the right format (row number, space, then column number)" << endl;
         cout << "Try again: ";
-        int r, c;
         cin >> r >> c;
     }
-    cout << "first click" << endl;
+    for(int i = 0; i < m_rows; i++){
+        for(int j = 0; j < m_cols; j++){
+            if((r == i && c == j) || (r + 1 == i && c == j) || (r == i && c + 1 == j)) m_grid[i][j] = Cell(false, this);
+            else{
+                double bombRatio = (sqrt(m_rows*m_cols)/(m_rows*m_cols)) * 100;
+                bool bomb = (rand() % 100 < bombRatio);
+                m_grid[i][j] = Cell(bomb, this);
+            }
+        }
+    }
+    for(int i = 0; i < m_rows; i++){
+        for(int j = 0; j < m_cols; j++){
+            calculateValue(i, j);
+        }
+    }
+    floodFill(row, col);
+}
+
+void Board::floodFill(int row, int col)
+{
+    if(row < 0 || col < 0 || row >= m_rows || col >= m_cols || !unopened(row, col)) return;
+    m_grid[row][col].openCell();
+    if(m_grid[row][col].getValue() != ' ') return;
+    floodFill(row+1,col);
+    floodFill(row,col+1);
+    floodFill(row+1,col+1);
+    floodFill(row-1,col-1);   
+    floodFill(row,col-1); 
+    floodFill(row-1,col); 
+    floodFill(row-1,col+1);
+    floodFill(row+1,col-1); 
+}
+
+
+
+bool Board::checkGameStatus()
+{
+    for(int i = 0; i < m_rows; i++){
+        for(int j = 0; j < m_cols; j++){
+            if(!m_grid[i][j].isOpened()){
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 Game::Game()
@@ -259,13 +300,13 @@ Game::Game()
         cin >> inputchar;
     }while(inputchar != "E" && inputchar != "M" && inputchar != "H");
     if(inputchar == "E"){
-        m_board = new Board(this, 5, 5);
+        m_board = new Board(this, 10, 10);
     }
     else if (inputchar == "M"){
-        m_board = new Board(this, 20, 20);
+        m_board = new Board(this, 18, 18);
     }
     else{
-        m_board = new Board(this, 100, 100);
+        m_board = new Board(this, 24, 24);
     }
 }
 
@@ -277,7 +318,6 @@ void Game::endGame(bool won)
     }
     else{
         cout << "You Lost!" << endl;
-
     }
 }
 
@@ -305,20 +345,24 @@ void Game::play(){
     m_board->displayBoard();
     cout << "Make your move (row# col#): " ;
     int r, c;
-    string f;
+    string a;
     cin >> r >> c;
     m_board->handleFirstClick(r, c);
     m_board->displayBoard();
     while(!m_gameOver){
-        cout << "Make your move: row# col# f - flag or n - no flag: ";
-        cin >> r >> c >> f;
-        if(f == "F" || f == "f") m_board->flagCell(r, c);
-        else move(r,c);
+        cout << "Make your move: row# col#: ";
+        cin >> r >> c;
+        cout << "What action do you want to do? (O)pen/(F)lag: ";
+        cin >> a;
+        if(a == "F" || a == "f") m_board->flagCell(r, c);
+        else if(a == "O" || a == "o") move(r,c);
+        else cout << "Invalid action!";
+        if(m_board->checkGameStatus()) endGame(true);
         m_board->displayBoard();
     }
 }
 
-//change it so the board is made after the first click: maybe reintroduce level of diff
-//make it so first click does "flood fill"
-//trouble shoot what is wrong with bottom row
-//add clear cells function
+//allocate bombs better
+    //create seperate function
+    //have a var for number of bombs
+    //have each bomb placed somewhere but not in the empty space or things directly around it

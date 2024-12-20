@@ -220,12 +220,14 @@ void Board::displayBoard()
 
 void Board::flagCell(int row, int col)
 {
-    m_grid[row][col].flag();
+    if(!m_grid[row][col].isOpened()) m_grid[row][col].flag();
+    else cout << "Don't flag this. It's already open!";
 }
 
 void Board::processMove(int row, int col)
 {
     if(m_grid[row][col].getValue() == ' ') floodFill(row, col);
+    if(m_grid[row][col].getFlag()) cout << "You can't open this. It is flagged!" << endl;
     else m_grid[row][col].openCell();
 
 }
@@ -356,7 +358,7 @@ void Game::play(){
         cin >> a;
         if(a == "F" || a == "f") m_board->flagCell(r, c);
         else if(a == "O" || a == "o") move(r,c);
-        else cout << "Invalid action!";
+        else cout << "Invalid action!" << endl;
         if(m_board->checkGameStatus()) endGame(true);
         m_board->displayBoard();
     }

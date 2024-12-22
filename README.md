@@ -1,7 +1,7 @@
 # Minesweeper
 
 
-Basic Minesweeper done in termianl
+Basic Minesweeper
 
 
 

@@ -1,21 +1,33 @@
-#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <SDL2/SDL.h>
 
-int main()
+const int WIDTH = 800, HEIGHT = 600;
+
+int main( int argc, char *argv[] )
 {
-    sf::RenderWindow window(sf::VideoMode({200, 200}), "SFML works!");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    SDL_Init( SDL_INIT_EVERYTHING );
 
-    while (window.isOpen())
+    SDL_Window *window = SDL_CreateWindow( "Hello SDL WORLD", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI );
+
+    if ( NULL == window )
     {
-        while (const std::optional event = window.pollEvent())
-        {
-            if (event->is<sf::Event::Closed>())
-                window.close();
-        }
-
-        window.clear();
-        window.draw(shape);
-        window.display();
+        std::cout << "Could not create window: " << SDL_GetError( ) << std::endl;
+        return 1;
     }
+
+    SDL_Event windowEvent;
+
+    while ( true )
+    {
+        if ( SDL_PollEvent( &windowEvent ) )
+        {
+            if ( SDL_QUIT == windowEvent.type )
+            { break; }
+        }
+    }
+
+    SDL_DestroyWindow( window );
+    SDL_Quit( );
+
+    return EXIT_SUCCESS;
 }

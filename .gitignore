@@ -7,9 +7,17 @@
 # Ignore executables
 *.exe
 
+
+
 # Ignore VSCode settings folder
 .vscode/
-.src/
+
+# Ignore SDL2.dll 
+SDL2.dll
+
+# Ignore source code directory if it's not needed
+./src/
+
 # User-specific files
 *.rsuser
 *.suo

@@ -7,8 +7,6 @@
 # Ignore executables
 *.exe
 
-
-
 # Ignore VSCode settings folder
 .vscode/
 

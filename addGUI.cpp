@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <SDL2/SDL.h>
 using namespace std;
 
 #define bold "\033[1m"
@@ -79,24 +80,27 @@ class Game{
         bool m_gameOver;
 };
 
-int main(){
-    cout << bold << "\nWelcome to Minesweeper!" << reset << endl << "-----------------------" << endl;
-    cout << "(Type 100 100 to quit whenever you want)\n" << endl;
-    Game g;
-    g.play();
-    string ans;
+int main( int argc, char *argv[] ){
+    SDL_Init( SDL_INIT_EVERYTHING );
+    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1100, 700, SDL_WINDOW_ALLOW_HIGHDPI );
+    if ( NULL == window ){
+        cout << "Could not create window: " << SDL_GetError( ) << endl;
+        return 1;}
+    SDL_Event windowEvent;
+
+    //MINESWEEPER
+    //Quit button
     while(true){
-        cout << "Play Again (y or n): ";
-        cin >> ans;
-        if(ans == "y" || ans == "Y"){
-            Game g;
-            g.play();
-        }
-        else{
-            break;
-        }
+        Game g;
+        g.play();
+        SDL_Delay(10000);
+        break;
     }
-    cout << "Thanks for playing!";
+
+    //Thanks for playing!
+    SDL_DestroyWindow( window );
+    SDL_Quit( );
+    return EXIT_SUCCESS;
 }
 
 Cell::Cell()
@@ -216,7 +220,6 @@ void Board::bombOpened()
 
 void Board::displayBoard()
 {
-    cout << "-----------------------" << endl << "     ";
     for(int i = -1; i < m_rows; i++){
         if(i > 9) cout << i << " | ";
         else if(i != -1) cout << i << "  | ";
@@ -238,6 +241,7 @@ void Board::displayBoard()
 }
 
 void Board::printValue(char value){
+    //change text color
     if(value == 'U') cout << colorEight << value << reset << "  ";
     else if(value == 'X') cout << colorFive << value << reset << "  ";
     else if(value == 'F') cout << colorThree << value << reset <<  "  ";
@@ -264,18 +268,13 @@ void Board::flagCell(int row, int col)
             bombsFlagged++;
         }
     }
-    else cout << "Don't flag this. It's already open!" << endl;
 }
 
 void Board::processMove(int row, int col)
 {
     if(checkMove(row, col)){
-        if(m_grid[row][col].getFlag()) cout << "You can't open this. It is flagged!" << endl;
-        else if(m_grid[row][col].getValue() == ' ') floodFill(row, col);
+        if(m_grid[row][col].getValue() == ' ') floodFill(row, col);
         else m_grid[row][col].openCell();
-    }
-    else{
-        cout << "Invalid Move" << endl;
     }
 }
 
@@ -287,12 +286,6 @@ void Board::handleFirstClick(int row, int col){
     int r = 0;
     int c = 0;
     srand(time(0));
-    while(!checkMove(row, col)){
-        cout << "Not the right format (row number, space, then column number)" << endl;
-        cout << "Try again: ";
-        cin >> row >> col;
-    }
-
     bool** bombMatrix;
     bombMatrix = new bool*[m_rows];
     for(int i = 0; i < m_rows; i++){
@@ -362,39 +355,26 @@ bool Board::isNeighbor(int r1, int c1, int r2, int c2)
 Game::Game()
 {
     m_gameOver = false;
-    cout << "Choose a level of difficulty" << endl;
+    //Choose a level of difficulty screen
     string inputchar;
-    do{
-        cout << "E, M, or H: ";
-        cin >> inputchar;
-    }while(inputchar != "E" && inputchar != "M" && inputchar != "H" && inputchar != "e" && inputchar != "m" && inputchar != "h");
-    if(inputchar == "E" || inputchar == "e"){
-        m_board = new Board(this, 10, 10, 10);
-    }
-    else if (inputchar == "M" || inputchar == "m"){
-        m_board = new Board(this, 18, 18, 40);
-    }
-    else{
-        m_board = new Board(this, 24, 24, 99);
-    }
+    m_board = new Board(this, 10, 10, 10);
+    //m_board = new Board(this, 18, 18, 40);
+    //m_board = new Board(this, 24, 24, 99);
+
 }
 
 void Game::endGame(bool won)
 {
     m_gameOver = true;
     if(won){
-        cout << bold << colorTwo << "Congrats! You Won!" << reset << endl;
+        //You Won!
     }
     else{
-        cout << bold << colorThree << "You Lost!" << reset << endl;
+        //You Lost
     }
 }
 
-void Game::quit()
-{
-    m_gameOver = true;
-    cout << "You quit the game!" << endl;
-}
+
 
 bool Game::getGameVal()
 {
@@ -402,28 +382,17 @@ bool Game::getGameVal()
 }
 
 void Game::play(){
-    m_board->displayBoard();
-    cout << "Make your move (row# col#): " ;
+    SDL_Event windowEvent;
+
     int r, c;
-    string a;
-    cin >> r >> c;
+
     m_board->handleFirstClick(r, c);
-    m_board->displayBoard();
+
     while(!m_gameOver){
-        cout << "Make your move: row# col#: ";
-        cin >> r >> c;
-        if(r == 100){
-            quit();
-            break;
-        }
-        cout << "What action do you want to do? (O)pen/(F)lag: ";
-        cin >> a;
-        if(a == "F" || a == "f") m_board->flagCell(r, c);
-        else if(a == "O" || a == "o") m_board->processMove(r,c);
-        else cout << "Invalid action!" << endl;
+        //add quit feature
+        break;
+        //flag Cell
+        //processMove 
         if(m_board->checkGameStatus()) endGame(true);
-        m_board->displayBoard();
     }
 }
-
-//text color

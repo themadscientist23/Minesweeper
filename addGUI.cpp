@@ -82,11 +82,87 @@ class Game{
 
 int main( int argc, char *argv[] ){
     SDL_Init( SDL_INIT_EVERYTHING );
-    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1100, 700, SDL_WINDOW_ALLOW_HIGHDPI );
+    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI );
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1,  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if ( NULL == window ){
         cout << "Could not create window: " << SDL_GetError( ) << endl;
         return 1;}
     SDL_Event windowEvent;
+    
+    SDL_Rect outerBox;
+    outerBox.x = 50;
+    outerBox.y = 50;
+    outerBox.w = 570;
+    outerBox.h = 650;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &outerBox);
+
+    SDL_Rect innerBox;
+    innerBox.x = 70;
+    innerBox.y = 70;
+    innerBox.w = 530;
+    innerBox.h = 60;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &innerBox);
+
+    SDL_Rect gameplayBox;
+    gameplayBox.x = 70;
+    gameplayBox.y = 150;
+    gameplayBox.w = 530;
+    gameplayBox.h = 530;
+    SDL_RenderDrawRect(renderer, &gameplayBox);
+
+    for(int i = 0; i < 10; i++){
+        for(int j = 0; j < 10; j++){
+            SDL_Rect box;
+            box.x = 70 + i*53;
+            box.y = 150 + j*53;
+            box.w = 53;
+            box.h = 53;
+            SDL_RenderDrawRect(renderer, &box);
+        }
+    }
+
+    SDL_Rect smileBox;
+    smileBox.x = 315;
+    smileBox.y = 80;
+    smileBox.w = 40;
+    smileBox.h = 40;
+    SDL_RenderDrawRect(renderer, &smileBox);
+
+    SDL_Rect eyeBox;
+    eyeBox.x = 323;
+    eyeBox.y = 88;
+    eyeBox.w = 8;
+    eyeBox.h = 8;
+    SDL_RenderFillRect(renderer, &eyeBox);
+
+    SDL_Rect eyeBox2;
+    eyeBox2.x = 338;
+    eyeBox2.y = 88;
+    eyeBox2.w = 8;
+    eyeBox2.h = 8;
+    SDL_RenderFillRect(renderer, &eyeBox2);
+
+    SDL_RenderDrawLine(renderer, 323, 105, 335, 115);
+    SDL_RenderDrawLine(renderer, 335, 115, 347, 105);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect flagBox;
+    flagBox.x = 100;
+    flagBox.y = 80;
+    flagBox.w = 120;
+    flagBox.h = 40;
+    SDL_RenderDrawRect(renderer, &flagBox);
+
+    SDL_Rect timerBox;
+    timerBox.x = 450;
+    timerBox.y = 80;
+    timerBox.w = 120;
+    timerBox.h = 40;
+    SDL_RenderDrawRect(renderer, &timerBox);
+
+    SDL_RenderPresent(renderer);
 
     //MINESWEEPER
     //Quit button
@@ -98,6 +174,7 @@ int main( int argc, char *argv[] ){
     }
 
     //Thanks for playing!
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow( window );
     SDL_Quit( );
     return EXIT_SUCCESS;
@@ -355,12 +432,8 @@ bool Board::isNeighbor(int r1, int c1, int r2, int c2)
 Game::Game()
 {
     m_gameOver = false;
-    //Choose a level of difficulty screen
     string inputchar;
     m_board = new Board(this, 10, 10, 10);
-    //m_board = new Board(this, 18, 18, 40);
-    //m_board = new Board(this, 24, 24, 99);
-
 }
 
 void Game::endGame(bool won)

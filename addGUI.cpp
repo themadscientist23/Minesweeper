@@ -87,7 +87,7 @@ int main( int argc, char *argv[] ){
     if ( NULL == window ){
         cout << "Could not create window: " << SDL_GetError( ) << endl;
         return 1;}
-    SDL_Event windowEvent;
+
     
     SDL_Rect outerBox;
     outerBox.x = 50;
@@ -164,12 +164,10 @@ int main( int argc, char *argv[] ){
 
     SDL_RenderPresent(renderer);
 
-    //MINESWEEPER
-    //Quit button
+
     while(true){
         Game g;
         g.play();
-        SDL_Delay(10000);
         break;
     }
 
@@ -456,16 +454,34 @@ bool Game::getGameVal()
 
 void Game::play(){
     SDL_Event windowEvent;
+    bool running = true;
+    while(running){
+        while (SDL_PollEvent(&windowEvent)) {
+            switch (windowEvent.type) {
+                case SDL_MOUSEBUTTONDOWN: { // A mouse button was pressed
+                    if (windowEvent.button.button == SDL_BUTTON_LEFT) {
+                        printf("Left button clicked at (%d, %d)\n", windowEvent.button.x, windowEvent.button.y);
+                        // Handle left-click logic here
+                    } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
+                        printf("Right button clicked at (%d, %d)\n", windowEvent.button.x, windowEvent.button.y);
+                        // Handle right-click logic here
+                    }
+                    break;
+                }
 
-    int r, c;
-
-    m_board->handleFirstClick(r, c);
-
-    while(!m_gameOver){
-        //add quit feature
-        break;
-        //flag Cell
-        //processMove 
-        if(m_board->checkGameStatus()) endGame(true);
+                case SDL_MOUSEBUTTONUP: { // A mouse button was released
+                    if (windowEvent.button.button == SDL_BUTTON_LEFT) {
+                        printf("Left button released\n");
+                    } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
+                        printf("Right button released\n");
+                    }
+                    break;
+                }
+                case SDL_QUIT: {
+                    m_gameOver = true;
+                    running = false;
+                }
+            }
+        }
     }
 }

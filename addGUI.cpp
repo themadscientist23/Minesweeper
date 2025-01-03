@@ -19,7 +19,6 @@ using namespace std;
 
 class Cell;
 class Board;
-class Game;
 
 class Cell{
     public:
@@ -46,137 +45,29 @@ class Cell{
 
 class Board{
     public:
-        Board(Game* game, int rows, int cols, int bombs);
+        Board(int rows, int cols, int bombs);
         ~Board();
         void calculateValue(int row, int col);
         void bombOpened();
-        void displayBoard();
+        void displayBoard(SDL_Renderer*);
         void flagCell(int row, int col);
         void processMove(int row, int col);
         bool checkMove(int row, int col);
         void handleFirstClick(int row, int col);
         void floodFill(int row, int col);
-        bool checkGameStatus();
+        bool stillPlaying();
+        bool getWin();
         bool isNeighbor(int r1, int c1, int r2, int c2);
         void printValue(char value);
     private: 
-        Game* m_game;
         Cell** m_grid;
         int m_bombs;
         int m_rows;
         int m_cols;
         int bombsFlagged;
+        bool activeBoard;
+        bool won;
 };
-
-class Game{
-   public:
-        Game();
-        void endGame(bool won);
-        bool getGameVal();
-        void play();
-        void quit();
-    private: 
-        Board* m_board;
-        bool m_gameOver;
-};
-
-int main( int argc, char *argv[] ){
-    SDL_Init( SDL_INIT_EVERYTHING );
-    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI );
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1,  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if ( NULL == window ){
-        cout << "Could not create window: " << SDL_GetError( ) << endl;
-        return 1;}
-
-    
-    SDL_Rect outerBox;
-    outerBox.x = 50;
-    outerBox.y = 50;
-    outerBox.w = 570;
-    outerBox.h = 650;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &outerBox);
-
-    SDL_Rect innerBox;
-    innerBox.x = 70;
-    innerBox.y = 70;
-    innerBox.w = 530;
-    innerBox.h = 60;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &innerBox);
-
-    SDL_Rect gameplayBox;
-    gameplayBox.x = 70;
-    gameplayBox.y = 150;
-    gameplayBox.w = 530;
-    gameplayBox.h = 530;
-    SDL_RenderDrawRect(renderer, &gameplayBox);
-
-    for(int i = 0; i < 10; i++){
-        for(int j = 0; j < 10; j++){
-            SDL_Rect box;
-            box.x = 70 + i*53;
-            box.y = 150 + j*53;
-            box.w = 53;
-            box.h = 53;
-            SDL_RenderDrawRect(renderer, &box);
-        }
-    }
-
-    SDL_Rect smileBox;
-    smileBox.x = 315;
-    smileBox.y = 80;
-    smileBox.w = 40;
-    smileBox.h = 40;
-    SDL_RenderDrawRect(renderer, &smileBox);
-
-    SDL_Rect eyeBox;
-    eyeBox.x = 323;
-    eyeBox.y = 88;
-    eyeBox.w = 8;
-    eyeBox.h = 8;
-    SDL_RenderFillRect(renderer, &eyeBox);
-
-    SDL_Rect eyeBox2;
-    eyeBox2.x = 338;
-    eyeBox2.y = 88;
-    eyeBox2.w = 8;
-    eyeBox2.h = 8;
-    SDL_RenderFillRect(renderer, &eyeBox2);
-
-    SDL_RenderDrawLine(renderer, 323, 105, 335, 115);
-    SDL_RenderDrawLine(renderer, 335, 115, 347, 105);
-
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_Rect flagBox;
-    flagBox.x = 100;
-    flagBox.y = 80;
-    flagBox.w = 120;
-    flagBox.h = 40;
-    SDL_RenderDrawRect(renderer, &flagBox);
-
-    SDL_Rect timerBox;
-    timerBox.x = 450;
-    timerBox.y = 80;
-    timerBox.w = 120;
-    timerBox.h = 40;
-    SDL_RenderDrawRect(renderer, &timerBox);
-
-    SDL_RenderPresent(renderer);
-
-
-    while(true){
-        Game g;
-        g.play();
-        break;
-    }
-
-    //Thanks for playing!
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow( window );
-    SDL_Quit( );
-    return EXIT_SUCCESS;
-}
 
 Cell::Cell()
 {
@@ -251,10 +142,11 @@ void Cell::openCell()
     }
 }
 
-Board::Board(Game* game, int rows, int cols, int bombs)
+Board::Board(int rows, int cols, int bombs)
 {
+    activeBoard = true;
+    won = false;
     m_bombs = bombs;
-    m_game = game;
     m_rows = rows;
     m_cols = cols;
     m_grid = new Cell*[rows];
@@ -290,33 +182,12 @@ void Board::calculateValue(int row, int col)
 
 void Board::bombOpened()
 {
-    m_game->endGame(false);
+    activeBoard = false;
+    won = false;
 }
 
-void Board::displayBoard()
-{
-    for(int i = -1; i < m_rows; i++){
-        if(i > 9) cout << i << " | ";
-        else if(i != -1) cout << i << "  | ";
-        for(int j = 0; j < m_cols; j++){
-            if(i == -1){
-                if(j > 9) cout << j << " ";
-                else cout << j << "  ";
-            }
-            else if(!m_game->getGameVal()){
-                if(m_grid[i][j].getFlag()) cout << colorThree << "F" << reset << "  ";
-                else printValue(m_grid[i][j].getDisplayValue()); 
-            }
-            else printValue(m_grid[i][j].getValue());
-        }
-        cout << "\n";
-    }
-    cout << "\n" << "Bombs Flagged: " << bombsFlagged << " / " << m_bombs << endl;
-    cout << "-----------------------" << endl;
-}
 
 void Board::printValue(char value){
-    //change text color
     if(value == 'U') cout << colorEight << value << reset << "  ";
     else if(value == 'X') cout << colorFive << value << reset << "  ";
     else if(value == 'F') cout << colorThree << value << reset <<  "  ";
@@ -410,16 +281,57 @@ void Board::floodFill(int row, int col)
     floodFill(row+1,col-1); 
 }
 
-bool Board::checkGameStatus()
+void drawBoxWithBorder(SDL_Renderer* renderer, SDL_Rect rect, SDL_Color fillColor, SDL_Color borderColor) {
+    SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
+    SDL_RenderFillRect(renderer, &rect);
+
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+    SDL_RenderDrawRect(renderer, &rect);
+}
+
+bool Board::stillPlaying()
 {
+    if(!activeBoard){
+        return false;
+    }
     for(int i = 0; i < m_rows; i++){
         for(int j = 0; j < m_cols; j++){
             if(!m_grid[i][j].isOpened() && !m_grid[i][j].isBomb()){
-                return false;
+                return true;
             }
         }
     }
-    return true;
+    won = true;
+    return false;
+}
+
+void Board::displayBoard(SDL_Renderer* rend){
+    SDL_Color b = {255,255,255,0};
+    SDL_Color f = {0,0,0,0};
+    for(int i = 0; i < 10; i++){
+        for(int j = 0; j < 10; j++){
+            SDL_Rect box;
+            box.x = 70 + j*53;
+            box.y = 150 + i*53;
+            box.w = 53;
+            box.h = 53;
+            if(m_grid[i][j].getFlag()){
+                f = {255, 255, 255, 0}; 
+            }
+            else if(m_grid[i][j].isOpened()){
+                f = {255, 0, 255, 0};
+            }
+            else{
+                f = {0, 0, 255, 0};   
+            }
+            drawBoxWithBorder(rend, box, f, b);
+        }
+    }
+}
+
+bool Board::getWin()
+{
+    return won;
 }
 
 bool Board::isNeighbor(int r1, int c1, int r2, int c2)
@@ -427,61 +339,142 @@ bool Board::isNeighbor(int r1, int c1, int r2, int c2)
     return (abs(r1 - r2) <= 1) && (abs(c1 - c2) <= 1);
 }
 
-Game::Game()
-{
-    m_gameOver = false;
-    string inputchar;
-    m_board = new Board(this, 10, 10, 10);
+bool translateMove(int x, int y, int &r, int &c){
+    r = (y - 150) / 53;
+    c = (x - 70)/53;
+    if(r > -1 && r < 10 && c > -1 && c < 10) return true;
+    else return false;
 }
 
-void Game::endGame(bool won)
-{
-    m_gameOver = true;
-    if(won){
-        //You Won!
+
+
+int main( int argc, char *argv[] ){
+    SDL_Init( SDL_INIT_EVERYTHING );
+    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI );
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1,  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if ( NULL == window ){
+        cout << "Could not create window: " << SDL_GetError( ) << endl;
+        return 1;}
+
+    
+    SDL_Rect outerBox;
+    outerBox.x = 50;
+    outerBox.y = 50;
+    outerBox.w = 570;
+    outerBox.h = 650;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &outerBox);
+
+    SDL_Rect innerBox;
+    innerBox.x = 70;
+    innerBox.y = 70;
+    innerBox.w = 530;
+    innerBox.h = 60;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(renderer, &innerBox);
+
+    SDL_Rect gameplayBox;
+    gameplayBox.x = 70;
+    gameplayBox.y = 150;
+    gameplayBox.w = 530;
+    gameplayBox.h = 530;
+    SDL_RenderDrawRect(renderer, &gameplayBox);
+
+    for(int i = 0; i < 10; i++){
+        for(int j = 0; j < 10; j++){
+            SDL_Rect box;
+            box.x = 70 + i*53;
+            box.y = 150 + j*53;
+            box.w = 53;
+            box.h = 53;
+            SDL_Color f = {0, 0, 255, 0};   
+            SDL_Color b = {0, 255, 0, 0};  
+            drawBoxWithBorder(renderer, box, f, b);
+        }
     }
-    else{
-        //You Lost
-    }
-}
 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_Rect smileBox;
+    smileBox.x = 315;
+    smileBox.y = 80;
+    smileBox.w = 40;
+    smileBox.h = 40;
+    SDL_RenderDrawRect(renderer, &smileBox);
 
+    SDL_Rect eyeBox;
+    eyeBox.x = 323;
+    eyeBox.y = 88;
+    eyeBox.w = 8;
+    eyeBox.h = 8;
+    SDL_RenderFillRect(renderer, &eyeBox);
 
-bool Game::getGameVal()
-{
-    return m_gameOver;
-}
+    SDL_Rect eyeBox2;
+    eyeBox2.x = 338;
+    eyeBox2.y = 88;
+    eyeBox2.w = 8;
+    eyeBox2.h = 8;
+    SDL_RenderFillRect(renderer, &eyeBox2);
 
-void Game::play(){
+    SDL_RenderDrawLine(renderer, 323, 105, 335, 115);
+    SDL_RenderDrawLine(renderer, 335, 115, 347, 105);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect flagBox;
+    flagBox.x = 100;
+    flagBox.y = 80;
+    flagBox.w = 120;
+    flagBox.h = 40;
+    SDL_RenderDrawRect(renderer, &flagBox);
+
+    SDL_Rect timerBox;
+    timerBox.x = 450;
+    timerBox.y = 80;
+    timerBox.w = 120;
+    timerBox.h = 40;
+    SDL_RenderDrawRect(renderer, &timerBox);
+
+    SDL_RenderPresent(renderer);
+    Board* board = new Board(10, 10, 10);
+
     SDL_Event windowEvent;
+    bool firstClick = true;
     bool running = true;
-    while(running){
+    int r,c;
+    while(running && board->stillPlaying()){
         while (SDL_PollEvent(&windowEvent)) {
             switch (windowEvent.type) {
-                case SDL_MOUSEBUTTONDOWN: { // A mouse button was pressed
-                    if (windowEvent.button.button == SDL_BUTTON_LEFT) {
-                        printf("Left button clicked at (%d, %d)\n", windowEvent.button.x, windowEvent.button.y);
-                        // Handle left-click logic here
-                    } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
-                        printf("Right button clicked at (%d, %d)\n", windowEvent.button.x, windowEvent.button.y);
-                        // Handle right-click logic here
-                    }
-                    break;
-                }
-
-                case SDL_MOUSEBUTTONUP: { // A mouse button was released
-                    if (windowEvent.button.button == SDL_BUTTON_LEFT) {
-                        printf("Left button released\n");
-                    } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
-                        printf("Right button released\n");
+                case SDL_MOUSEBUTTONDOWN: {
+                    if(translateMove(windowEvent.button.x, windowEvent.button.y, r, c)){
+                        cout << "r: " << r << " c: " << c << endl;
+                        if (windowEvent.button.button == SDL_BUTTON_LEFT) {
+                            if(firstClick){
+                                board->handleFirstClick(r,c);
+                                firstClick = false;
+                            }
+                            board->processMove(r,c);
+                        } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
+                            board->flagCell(r,c);
+                        }
                     }
                     break;
                 }
                 case SDL_QUIT: {
-                    m_gameOver = true;
                     running = false;
+                    break;
                 }
             }
         }
+        board->displayBoard(renderer);
+        SDL_RenderPresent(renderer);
     }
+
+    if(board->getWin()){
+        cout << "You won";
+    }
+    else cout << "You lost";
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow( window );
+    SDL_Quit( );
+    return EXIT_SUCCESS;
 }

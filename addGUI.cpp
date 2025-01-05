@@ -4,6 +4,7 @@
 #include <cmath>
 #include <ctime>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 using namespace std;
 
 #define bold "\033[1m"
@@ -349,13 +350,77 @@ bool translateMove(int x, int y, int &r, int &c){
 
 
 int main( int argc, char *argv[] ){
-    SDL_Init( SDL_INIT_EVERYTHING );
-    SDL_Window *window = SDL_CreateWindow( "Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI );
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1,  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if ( NULL == window ){
-        cout << "Could not create window: " << SDL_GetError( ) << endl;
-        return 1;}
+   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+        cout << "SDL initialization failed: " << SDL_GetError() << endl;
+        return 1;
+    }
 
+    if (TTF_Init() < 0) {
+        cout << "TTF_Init failed: " << TTF_GetError() << endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Window *window = SDL_CreateWindow("Minesweeper", 
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+        670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
+    
+    if (window == NULL) {
+        cout << "Could not create window: " << SDL_GetError() << endl;
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    
+    if (renderer == NULL) {
+        cout << "Could not create renderer: " << SDL_GetError() << endl;
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    TTF_Font *font = TTF_OpenFont("include/SDL2/Roboto-Medium.ttf", 24);
+    if (!font) {
+        cout << "Failed to load font: " << TTF_GetError() << endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Color color = {255,255,255,0};
+    SDL_Surface *textSurface = TTF_RenderText_Blended(font, "Hello", color);
+    if (!textSurface) {
+        cout << "Failed to create text surface: " << TTF_GetError() << endl;
+        TTF_CloseFont(font);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (!textTexture) {
+        cout << "Failed to create texture: " << SDL_GetError() << endl;
+        SDL_FreeSurface(textSurface);
+        TTF_CloseFont(font);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_RenderClear(renderer);
+    SDL_Rect renderRect = {100,100,textSurface->w, textSurface->h};
+    SDL_FreeSurface(textSurface);
+    SDL_RenderCopy(renderer,textTexture,NULL,&renderRect);
     
     SDL_Rect outerBox;
     outerBox.x = 50;
@@ -475,6 +540,9 @@ int main( int argc, char *argv[] ){
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow( window );
+    SDL_DestroyTexture(textTexture);
+    TTF_CloseFont(font);
+    TTF_Quit( );
     SDL_Quit( );
     return EXIT_SUCCESS;
 }

@@ -1,3 +1,10 @@
+//get rid of the red boxes for now
+//make the background stuff into a function that is called every loop so i can clear the renderer
+// - make the boxes in one line
+//make each box have the number printed when opened
+//-just get it to a playable game and be done with it for now
+
+
 #include <iostream>
 #include <string>
 #include <cstdlib>
@@ -20,6 +27,15 @@ using namespace std;
 
 class Cell;
 class Board;
+
+void renderText(SDL_Renderer* renderer, TTF_Font* font, string& text, SDL_Color color, int x, int y){
+    SDL_Surface *textSurface = TTF_RenderText_Blended(font, text.c_str(), color);
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_Rect renderRect = {x,y,textSurface->w, textSurface->h};
+    SDL_FreeSurface(textSurface);
+    SDL_RenderCopy(renderer,textTexture,NULL,&renderRect);
+    SDL_DestroyTexture(textTexture);
+}
 
 class Cell{
     public:
@@ -350,93 +366,33 @@ bool translateMove(int x, int y, int &r, int &c){
 
 
 int main( int argc, char *argv[] ){
-   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        cout << "SDL initialization failed: " << SDL_GetError() << endl;
-        return 1;
+   SDL_Init(SDL_INIT_EVERYTHING);
+   if (TTF_Init() < 0) {
+        cerr << "TTF initialization failed: " << TTF_GetError() << endl;
+        return EXIT_FAILURE;
     }
+   SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
+   SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+   TTF_Font *font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 20);
+   SDL_Color color = {255,255,255,0};
+   string text = "Hello";
+   SDL_RenderClear(renderer);
 
-    if (TTF_Init() < 0) {
-        cout << "TTF_Init failed: " << TTF_GetError() << endl;
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Window *window = SDL_CreateWindow("Minesweeper", 
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-        670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
-    
-    if (window == NULL) {
-        cout << "Could not create window: " << SDL_GetError() << endl;
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 
-        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    
-    if (renderer == NULL) {
-        cout << "Could not create renderer: " << SDL_GetError() << endl;
-        SDL_DestroyWindow(window);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    TTF_Font *font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 24);
-    if (!font) {
-        cout << "Failed to load font: " << TTF_GetError() << endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Color color = {255,255,255,0};
-    SDL_Surface *textSurface = TTF_RenderText_Blended(font, "Hello", color);
-    if (!textSurface) {
-        cout << "Failed to create text surface: " << TTF_GetError() << endl;
-        TTF_CloseFont(font);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (!textTexture) {
-        cout << "Failed to create texture: " << SDL_GetError() << endl;
-        SDL_FreeSurface(textSurface);
-        TTF_CloseFont(font);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        TTF_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_RenderClear(renderer);
-    SDL_Rect renderRect = {100,100,textSurface->w, textSurface->h};
-    SDL_FreeSurface(textSurface);
-    SDL_RenderCopy(renderer,textTexture,NULL,&renderRect);
-    
-    SDL_Rect outerBox;
-    outerBox.x = 50;
-    outerBox.y = 50;
-    outerBox.w = 570;
-    outerBox.h = 650;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &outerBox);
-
-    SDL_Rect innerBox;
-    innerBox.x = 70;
-    innerBox.y = 70;
-    innerBox.w = 530;
-    innerBox.h = 60;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(renderer, &innerBox);
+   SDL_Rect outerBox;
+   outerBox.x = 50;
+   outerBox.y = 50;
+   outerBox.w = 570;
+   outerBox.h = 650;
+   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+   SDL_RenderDrawRect(renderer, &outerBox);
+   
+   SDL_Rect innerBox;
+   innerBox.x = 70;
+   innerBox.y = 70;
+   innerBox.w = 530;
+   innerBox.h = 60;
+   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+   SDL_RenderDrawRect(renderer, &innerBox);
 
     SDL_Rect gameplayBox;
     gameplayBox.x = 70;
@@ -498,6 +454,7 @@ int main( int argc, char *argv[] ){
     timerBox.h = 40;
     SDL_RenderDrawRect(renderer, &timerBox);
 
+    renderText(renderer, font, text, color, 100, 100);
     SDL_RenderPresent(renderer);
     Board* board = new Board(10, 10, 10);
 
@@ -506,6 +463,8 @@ int main( int argc, char *argv[] ){
     bool running = true;
     int r,c;
     while(running && board->stillPlaying()){
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+
         while (SDL_PollEvent(&windowEvent)) {
             switch (windowEvent.type) {
                 case SDL_MOUSEBUTTONDOWN: {
@@ -540,7 +499,6 @@ int main( int argc, char *argv[] ){
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow( window );
-    SDL_DestroyTexture(textTexture);
     TTF_CloseFont(font);
     TTF_Quit( );
     SDL_Quit( );

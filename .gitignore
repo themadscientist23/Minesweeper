@@ -13,8 +13,7 @@ src/
 .vscode/
 
 # Ignore SDL2.dll 
-SDL2.dll
-SDL2_ttf.dll
+*.dll
 
 # Ignore source code directory if it's not needed
 ./src/

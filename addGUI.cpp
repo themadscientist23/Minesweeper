@@ -383,7 +383,7 @@ int main( int argc, char *argv[] ){
         return 1;
     }
 
-    TTF_Font *font = TTF_OpenFont("include/SDL2/Roboto-Medium.ttf", 24);
+    TTF_Font *font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 24);
     if (!font) {
         cout << "Failed to load font: " << TTF_GetError() << endl;
         SDL_DestroyRenderer(renderer);

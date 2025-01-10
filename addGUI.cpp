@@ -66,7 +66,7 @@ class Board{
         ~Board();
         void calculateValue(int row, int col);
         void bombOpened();
-        void displayBoard(SDL_Renderer*);
+        void displayBoard(SDL_Renderer* rend, TTF_Font* font);
         void flagCell(int row, int col);
         void processMove(int row, int col);
         bool checkMove(int row, int col);
@@ -306,78 +306,8 @@ void drawBoxWithBorder(SDL_Renderer* renderer, SDL_Rect rect, SDL_Color fillColo
     SDL_RenderDrawRect(renderer, &rect);
 }
 
-bool Board::stillPlaying()
-{
-    if(!activeBoard){
-        return false;
-    }
-    for(int i = 0; i < m_rows; i++){
-        for(int j = 0; j < m_cols; j++){
-            if(!m_grid[i][j].isOpened() && !m_grid[i][j].isBomb()){
-                return true;
-            }
-        }
-    }
-    won = true;
-    return false;
-}
-
-void Board::displayBoard(SDL_Renderer* rend){
-    SDL_Color b = {255,255,255,0};
-    SDL_Color f = {0,0,0,0};
-    for(int i = 0; i < 10; i++){
-        for(int j = 0; j < 10; j++){
-            SDL_Rect box;
-            box.x = 70 + j*53;
-            box.y = 150 + i*53;
-            box.w = 53;
-            box.h = 53;
-            if(m_grid[i][j].getFlag()){
-                f = {255, 255, 255, 0}; 
-            }
-            else if(m_grid[i][j].isOpened()){
-                f = {255, 0, 255, 0};
-            }
-            else{
-                f = {0, 0, 255, 0};   
-            }
-            drawBoxWithBorder(rend, box, f, b);
-        }
-    }
-}
-
-bool Board::getWin()
-{
-    return won;
-}
-
-bool Board::isNeighbor(int r1, int c1, int r2, int c2)
-{
-    return (abs(r1 - r2) <= 1) && (abs(c1 - c2) <= 1);
-}
-
-bool translateMove(int x, int y, int &r, int &c){
-    r = (y - 150) / 53;
-    c = (x - 70)/53;
-    if(r > -1 && r < 10 && c > -1 && c < 10) return true;
-    else return false;
-}
-
-
-
-int main( int argc, char *argv[] ){
-   SDL_Init(SDL_INIT_EVERYTHING);
-   if (TTF_Init() < 0) {
-        cerr << "TTF initialization failed: " << TTF_GetError() << endl;
-        return EXIT_FAILURE;
-    }
-   SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
-   SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-   TTF_Font *font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 20);
-   SDL_Color color = {255,255,255,0};
-   string text = "Hello";
+void drawBackground(SDL_Renderer* renderer){
    SDL_RenderClear(renderer);
-
    SDL_Rect outerBox;
    outerBox.x = 50;
    outerBox.y = 50;
@@ -454,14 +384,98 @@ int main( int argc, char *argv[] ){
     timerBox.h = 40;
     SDL_RenderDrawRect(renderer, &timerBox);
 
-    renderText(renderer, font, text, color, 100, 100);
-    SDL_RenderPresent(renderer);
-    Board* board = new Board(10, 10, 10);
 
+
+}
+
+bool Board::stillPlaying()
+{
+    if(!activeBoard){
+        return false;
+    }
+    for(int i = 0; i < m_rows; i++){
+        for(int j = 0; j < m_cols; j++){
+            if(!m_grid[i][j].isOpened() && !m_grid[i][j].isBomb()){
+                return true;
+            }
+        }
+    }
+    won = true;
+    return false;
+}
+
+void Board::displayBoard(SDL_Renderer* rend, TTF_Font* font){
+    SDL_Color b = {255,255,255,0};
+    SDL_Color f = {0,0,0,0};
+    SDL_Color color = {255,255,255,0};
+    SDL_RenderClear(rend);
+    drawBackground(rend);
+    string text = to_string(bombsFlagged);
+    int buffer = 0;
+    if(bombsFlagged > 9) buffer = 8;
+    renderText(rend, font, text, color, 155 - buffer, 88);
+    color = {255,255,255,255};
+    for(int i = 0; i < 10; i++){
+        for(int j = 0; j < 10; j++){
+            SDL_Rect box;
+            box.x = 70 + j*53;
+            box.y = 150 + i*53;
+            box.w = 53;
+            box.h = 53;
+            if(m_grid[i][j].getFlag()){
+                f = {255, 255, 255, 0}; 
+            }
+            else if(m_grid[i][j].isOpened()){
+                f = {255, 0, 255, 0};
+            }
+            else{
+                f = {0, 0, 255, 0};   
+            }
+            if(m_grid[i][j].isOpened())
+                text = string(1,m_grid[i][j].getValue());
+            else text = " ";
+            drawBoxWithBorder(rend, box, f, b);
+            renderText(rend, font, text, color, 77 + j*53, 157 + i*53);
+        }
+    }
+}
+
+bool Board::getWin()
+{
+    return won;
+}
+
+bool Board::isNeighbor(int r1, int c1, int r2, int c2)
+{
+    return (abs(r1 - r2) <= 1) && (abs(c1 - c2) <= 1);
+}
+
+bool translateMove(int x, int y, int &r, int &c){
+    r = (y - 150) / 53;
+    c = (x - 70)/53;
+    if(r > -1 && r < 10 && c > -1 && c < 10) return true;
+    else return false;
+}
+
+
+
+int main( int argc, char *argv[] ){
+   SDL_Init(SDL_INIT_EVERYTHING);
+   if (TTF_Init() < 0) {
+        cerr << "TTF initialization failed: " << TTF_GetError() << endl;
+        return EXIT_FAILURE;
+    }
+
+   SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
+   SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+   TTF_Font* font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 20);
+   drawBackground(renderer);
+   Board* board = new Board(10, 10, 10);
     SDL_Event windowEvent;
     bool firstClick = true;
     bool running = true;
     int r,c;
+    Uint32 startTime = SDL_GetTicks();
     while(running && board->stillPlaying()){
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
 
@@ -488,14 +502,23 @@ int main( int argc, char *argv[] ){
                 }
             }
         }
-        board->displayBoard(renderer);
+        if(!board->stillPlaying()){
+            if(board->getWin()) cout << "You won";
+            else cout << "You lost";
+            running = false;
+        }
+
+        Uint32 elapsedTime = SDL_GetTicks() - startTime;
+        string timerTxt = to_string(elapsedTime/1000);
+    
+
+
+        board->displayBoard(renderer, font);
+        SDL_Color timeColor = {255,255,255,255};
+        renderText(renderer,font, timerTxt,timeColor, 505,88);
         SDL_RenderPresent(renderer);
     }
 
-    if(board->getWin()){
-        cout << "You won";
-    }
-    else cout << "You lost";
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow( window );

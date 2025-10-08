@@ -1,10 +1,3 @@
-//get rid of the red boxes for now
-//make the background stuff into a function that is called every loop so i can clear the renderer
-// - make the boxes in one line
-//make each box have the number printed when opened
-//-just get it to a playable game and be done with it for now
-
-
 #include <iostream>
 #include <string>
 #include <cstdlib>

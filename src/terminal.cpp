@@ -3,6 +3,10 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+
+#include <cell.h>
+#include <board.h>
+
 using namespace std;
 
 #define bold "\033[1m"

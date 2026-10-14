@@ -3,8 +3,13 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+
 #include <SDL.h>
 #include <SDL_ttf.h>
+
+#include <cell.h>
+#include <board.h>
+
 using namespace std;
 
 const int ROW_COUNT = 9;

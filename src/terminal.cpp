@@ -40,7 +40,7 @@ class Game{
 int main(){
     srand(time(0));
     cout << bold << "\nWelcome to Minesweeper!" << reset << endl << "-----------------------" << endl;
-    cout << "(Type 100 100 to quit whenever you want)\n" << endl;
+    cout << "(Type 100 as the row number to quit whenever you want)\n" << endl;
     Game g;
     g.play();
     string ans;
@@ -165,7 +165,7 @@ void Game::play(){
     string a;
     cin >> r >> c;
     while(m_board->handleFirstClick(r, c) == MoveResult::Invalid){
-        cout << "Not the right format (row number, space, then column number)" << endl;
+        cout << "Not the right format (row #, space, then column #)" << endl;
         cout << "Try again: ";
         cin >> r >> c;
     }
@@ -189,7 +189,7 @@ void Game::play(){
         }
 
         if(result == MoveResult::Invalid) cout << "Invalid Move" << endl;
-        else if(result == MoveResult::Flagged) cout << "You can't open this. It is flagged!" << endl;
+        else if(result == MoveResult::Flagged) cout << "You can't open this. It's flagged!" << endl;
         else if(result == MoveResult::AlreadyOpen) cout << "Don't flag this. It's already open!" << endl;
         checkGameState();
         displayBoard();

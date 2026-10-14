@@ -1,4 +1,6 @@
-.PHONY: gui terminal run-gui run-terminal debug-gui debug-terminal clean
+.PHONY: gui terminal run-gui run-terminal debug-gui debug-terminal format format-check clean
+
+SOURCES := $(wildcard src/*.cpp src/*.h)
 
 build/Makefile:
 	cmake -B build
@@ -25,6 +27,12 @@ debug-gui: build/debug/Makefile
 debug-terminal: build/debug/Makefile
 	cmake --build build/debug --target terminal
 	lldb ./build/debug/terminal
+
+format:
+	clang-format -i $(SOURCES)
+
+format-check:
+	clang-format --dry-run --Werror $(SOURCES)
 
 clean:
 	rm -rf build

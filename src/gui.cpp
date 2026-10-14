@@ -170,7 +170,11 @@ int main( int argc, char *argv[] ){
 
    SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, 0);
    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-   TTF_Font* font = TTF_OpenFont("/Users/ciaranturner/Downloads/Roboto-Medium.ttf", 20);
+   TTF_Font* font = TTF_OpenFont("assets/fonts/Roboto-Medium.ttf", 20);
+   if (!font) {
+        cerr << "Failed to load font: " << TTF_GetError() << endl;
+        return EXIT_FAILURE;
+    }
    drawBackground(renderer);
    Board* board = new Board(ROW_COUNT, COL_COUNT, 10);
     SDL_Event windowEvent;

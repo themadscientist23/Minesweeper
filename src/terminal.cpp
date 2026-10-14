@@ -80,7 +80,7 @@ void Game::displayBoard()
             if (i == -1){
                 cout <<  "---";
             }
-            if(i == -2){
+            else if(i == -2){
                 if(j > 9) cout << j << " ";
                 else cout << j << "  ";
             }

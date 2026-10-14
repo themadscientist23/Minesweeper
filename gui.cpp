@@ -3,20 +3,12 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
 using namespace std;
 
-#define bold "\033[1m"
-#define reset "\033[0m" 
-#define colorOne "\033[34m" 
-#define colorTwo "\033[32m"   
-#define colorThree "\033[31m"               
-#define colorFour "\033[104m"      
-#define colorFive "\033[101m"     
-#define colorSix "\033[46m"     
-#define colorSeven "\033[30m"      
-#define colorEight "\033[90m"      
+const int ROW_COUNT = 9;
+const int COL_COUNT = 9;
 
 class Cell;
 class Board;
@@ -68,7 +60,6 @@ class Board{
         bool stillPlaying();
         bool getWin();
         bool isNeighbor(int r1, int c1, int r2, int c2);
-        void printValue(char value);
     private: 
         Cell** m_grid;
         int m_bombs;
@@ -196,22 +187,6 @@ void Board::bombOpened()
     won = false;
 }
 
-
-void Board::printValue(char value){
-    if(value == 'U') cout << colorEight << value << reset << "  ";
-    else if(value == 'X') cout << colorFive << value << reset << "  ";
-    else if(value == 'F') cout << colorThree << value << reset <<  "  ";
-    else if(value == '1') cout << colorOne << value << reset << "  "; 
-    else if(value == '2') cout << colorTwo << value << reset << "  ";
-    else if(value == '3') cout << colorThree << value << reset << "  ";    
-    else if(value == '4') cout << colorFour << value << reset << "  ";
-    else if(value == '5') cout << colorFive << value << reset << "  ";
-    else if(value == '6') cout << colorSix << value << reset << "  ";
-    else if(value == '7') cout << colorSeven << value << reset << "  ";
-    else if(value == '8') cout << colorEight << value << reset << "  ";
-    else cout << value << "  ";
-}
-
 void Board::flagCell(int row, int col)
 {
     if(!m_grid[row][col].isOpened()) {
@@ -324,8 +299,8 @@ void drawBackground(SDL_Renderer* renderer){
     gameplayBox.h = 530;
     SDL_RenderDrawRect(renderer, &gameplayBox);
 
-    for(int i = 0; i < 10; i++){
-        for(int j = 0; j < 10; j++){
+    for(int i = 0; i < ROW_COUNT; i++){
+        for(int j = 0; j < COL_COUNT; j++){
             SDL_Rect box;
             box.x = 70 + i*53;
             box.y = 150 + j*53;
@@ -408,8 +383,8 @@ void Board::displayBoard(SDL_Renderer* rend, TTF_Font* font){
     if(bombsFlagged > 9) buffer = 8;
     renderText(rend, font, text, color, 155 - buffer, 88);
     color = {255,255,255,255};
-    for(int i = 0; i < 10; i++){
-        for(int j = 0; j < 10; j++){
+    for(int i = 0; i < 9; i++){
+        for(int j = 0; j < 9; j++){
             SDL_Rect box;
             box.x = 70 + j*53;
             box.y = 150 + i*53;
@@ -420,6 +395,9 @@ void Board::displayBoard(SDL_Renderer* rend, TTF_Font* font){
             }
             else if(m_grid[i][j].isOpened()){
                 f = {255, 0, 255, 0};
+            }
+            else if (m_grid[i][j].isBomb()){
+                f  = {100, 100, 100, 0};
             }
             else{
                 f = {0, 0, 255, 0};   
@@ -446,7 +424,7 @@ bool Board::isNeighbor(int r1, int c1, int r2, int c2)
 bool translateMove(int x, int y, int &r, int &c){
     r = (y - 150) / 53;
     c = (x - 70)/53;
-    if(r > -1 && r < 10 && c > -1 && c < 10) return true;
+    if(r > -1 && r < ROW_COUNT && c > -1 && c < COL_COUNT) return true;
     else return false;
 }
 
@@ -459,11 +437,11 @@ int main( int argc, char *argv[] ){
         return EXIT_FAILURE;
     }
 
-   SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, SDL_WINDOW_ALLOW_HIGHDPI);
+   SDL_Window *window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 670, 750, 0);
    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-   TTF_Font* font = TTF_OpenFont("src/include/SDL2/Roboto-Medium.ttf", 20);
+   TTF_Font* font = TTF_OpenFont("/Users/ciaranturner/Downloads/Roboto-Medium.ttf", 20);
    drawBackground(renderer);
-   Board* board = new Board(10, 10, 10);
+   Board* board = new Board(ROW_COUNT, COL_COUNT, 10);
     SDL_Event windowEvent;
     bool firstClick = true;
     bool running = true;

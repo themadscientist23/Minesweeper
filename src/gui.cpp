@@ -14,6 +14,11 @@ using namespace std;
 const int ROW_COUNT = 9;
 const int COL_COUNT = 9;
 
+const int BOARD_X = 70;
+const int BOARD_Y = 150;
+const int BOARD_SIZE = 530;
+const int CELL_SIZE = BOARD_SIZE / ROW_COUNT;
+
 void renderText(SDL_Renderer* renderer, TTF_Font* font, string& text, SDL_Color color, int x, int y){
     SDL_Surface *textSurface = TTF_RenderText_Blended(font, text.c_str(), color);
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
@@ -50,24 +55,11 @@ void drawBackground(SDL_Renderer* renderer){
    SDL_RenderDrawRect(renderer, &innerBox);
 
     SDL_Rect gameplayBox;
-    gameplayBox.x = 70;
-    gameplayBox.y = 150;
-    gameplayBox.w = 530;
-    gameplayBox.h = 530;
+    gameplayBox.x = BOARD_X;
+    gameplayBox.y = BOARD_Y;
+    gameplayBox.w = CELL_SIZE * COL_COUNT;
+    gameplayBox.h = CELL_SIZE * ROW_COUNT;
     SDL_RenderDrawRect(renderer, &gameplayBox);
-
-    for(int i = 0; i < ROW_COUNT; i++){
-        for(int j = 0; j < COL_COUNT; j++){
-            SDL_Rect box;
-            box.x = 70 + i*53;
-            box.y = 150 + j*53;
-            box.w = 53;
-            box.h = 53;
-            SDL_Color f = {0, 0, 255, 0};   
-            SDL_Color b = {0, 255, 0, 0};  
-            drawBoxWithBorder(renderer, box, f, b);
-        }
-    }
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect smileBox;
@@ -137,10 +129,10 @@ void displayBoard(Board* board, SDL_Renderer* rend, TTF_Font* font){
         for(int j = 0; j < COL_COUNT; j++){
             const Cell& cell = board->getCell(i, j);
             SDL_Rect box;
-            box.x = 70 + j*53;
-            box.y = 150 + i*53;
-            box.w = 53;
-            box.h = 53;
+            box.x = BOARD_X + j*CELL_SIZE;
+            box.y = BOARD_Y + i*CELL_SIZE;
+            box.w = CELL_SIZE;
+            box.h = CELL_SIZE;
             if(cell.getFlag()){
                 f = {255, 255, 255, 0};
             }
@@ -152,16 +144,18 @@ void displayBoard(Board* board, SDL_Renderer* rend, TTF_Font* font){
             }
             text = cellText(cell);
             drawBoxWithBorder(rend, box, f, b);
-            renderText(rend, font, text, color, 77 + j*53, 157 + i*53);
+            int textW, textH;
+            TTF_SizeText(font, text.c_str(), &textW, &textH);
+            renderText(rend, font, text, color, box.x + (CELL_SIZE - textW) / 2, box.y + (CELL_SIZE - textH) / 2);
         }
     }
 }
 
 bool translateMove(int x, int y, int &r, int &c){
-    r = (y - 150) / 53;
-    c = (x - 70)/53;
-    if(r > -1 && r < ROW_COUNT && c > -1 && c < COL_COUNT) return true;
-    else return false;
+    if(x < BOARD_X || y < BOARD_Y) return false;
+    r = (y - BOARD_Y) / CELL_SIZE;
+    c = (x - BOARD_X) / CELL_SIZE;
+    return r < ROW_COUNT && c < COL_COUNT;
 }
 
 

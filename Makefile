@@ -13,18 +13,18 @@ terminal: build/Makefile
 	cmake --build build --target terminal
 
 run-gui: gui
-	cd build && ./minesweeper
+	./build/minesweeper
 
 run-terminal: terminal
-	cd build && ./terminal
+	./build/terminal
 
 debug-gui: build/debug/Makefile
 	cmake --build build/debug --target minesweeper
-	cd build/debug && lldb ./minesweeper
+	lldb ./build/debug/minesweeper
 
 debug-terminal: build/debug/Makefile
 	cmake --build build/debug --target terminal
-	cd build/debug && lldb ./terminal
+	lldb ./build/debug/terminal
 
 clean:
 	rm -rf build

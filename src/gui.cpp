@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <cmath>
 #include <ctime>
 
 #include <SDL.h>
@@ -15,9 +14,6 @@ using namespace std;
 const int ROW_COUNT = 9;
 const int COL_COUNT = 9;
 
-class Cell;
-class Board;
-
 void renderText(SDL_Renderer* renderer, TTF_Font* font, string& text, SDL_Color color, int x, int y){
     SDL_Surface *textSurface = TTF_RenderText_Blended(font, text.c_str(), color);
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
@@ -25,250 +21,6 @@ void renderText(SDL_Renderer* renderer, TTF_Font* font, string& text, SDL_Color 
     SDL_FreeSurface(textSurface);
     SDL_RenderCopy(renderer,textTexture,NULL,&renderRect);
     SDL_DestroyTexture(textTexture);
-}
-
-class Cell{
-    public:
-        Cell();
-        char getValue() const;
-        void setValue(char value);
-        bool getFlag() const;
-        void setFlag(bool value);
-        char getDisplayValue();
-        void setDisplayValue(char value);
-        void setBomb(bool value);
-        void setBoard(Board* board);
-        bool isBomb() const;
-        bool isOpened() const;
-        void openCell();
-    private: 
-        Board* m_board;
-        char m_value;
-        char m_display_value;
-        bool m_opened;
-        bool m_flagged;
-        bool m_bomb;
-};
-
-class Board{
-    public:
-        Board(int rows, int cols, int bombs);
-        ~Board();
-        void calculateValue(int row, int col);
-        void bombOpened();
-        void displayBoard(SDL_Renderer* rend, TTF_Font* font);
-        void flagCell(int row, int col);
-        void processMove(int row, int col);
-        bool checkMove(int row, int col);
-        void handleFirstClick(int row, int col);
-        void floodFill(int row, int col);
-        bool stillPlaying();
-        bool getWin();
-        bool isNeighbor(int r1, int c1, int r2, int c2);
-    private: 
-        Cell** m_grid;
-        int m_bombs;
-        int m_rows;
-        int m_cols;
-        int bombsFlagged;
-        bool activeBoard;
-        bool won;
-};
-
-Cell::Cell()
-{
-    m_display_value = 'U';
-    m_bomb = false;
-    if(m_bomb) m_value = 'X';
-    else m_value = ' ';
-    m_opened = false;
-    m_flagged = false;
-    m_board = nullptr;
-}
-
-char Cell::getValue() const
-{
-    return m_value;
-}
-
-void Cell::setValue(char value)
-{
-    m_value = value;
-}
-
-bool Cell::getFlag() const
-{
-    return m_flagged;
-}
-
-void Cell::setFlag(bool value)
-{
-    m_flagged = value;
-}
-
-bool Cell::isBomb() const
-{
-    return m_bomb;
-}
-
-void Cell::setBoard(Board *board)
-{
-    m_board = board;
-}
-
-bool Cell::isOpened() const
-{
-    return m_opened;
-}
-
-char Cell::getDisplayValue()
-{
-    return m_display_value;
-}
-
-void Cell::setDisplayValue(char value)
-{
-    m_display_value = value;
-}
-
-void Cell::setBomb(bool value)
-{
-    m_bomb = value;
-}
-
-void Cell::openCell()
-{
-    if(m_flagged) return;
-    m_opened = true;
-    if(isBomb()){
-        m_board->bombOpened();
-    }
-    else{
-        setDisplayValue(m_value);
-    }
-}
-
-Board::Board(int rows, int cols, int bombs)
-{
-    activeBoard = true;
-    won = false;
-    m_bombs = bombs;
-    m_rows = rows;
-    m_cols = cols;
-    m_grid = new Cell*[rows];
-    for(int i = 0; i < rows; i++){
-        m_grid[i] = new Cell[cols];
-    }
-    bombsFlagged = 0;
-}
-
-Board::~Board()
-{
-    for(int i = 0; i < m_rows; i++){
-        delete[] m_grid[i];
-    }
-    delete[] m_grid;
-}
-
-void Board::calculateValue(int row, int col)
-{
-    int valueCounter = 0;
-    if(col + 1 < m_cols && m_grid[row][col+1].isBomb()) valueCounter++;
-    if(row + 1 < m_rows && m_grid[row+1][col].isBomb()) valueCounter++;
-    if(row + 1 < m_rows && col + 1 < m_cols && m_grid[row+1][col+1].isBomb()) valueCounter++;
-    if(row > 0 && m_grid[row-1][col].isBomb()) valueCounter++;
-    if(col > 0 && m_grid[row][col-1].isBomb()) valueCounter++;
-    if(row > 0 && col > 0 && m_grid[row-1][col-1].isBomb()) valueCounter++;
-    if(row > 0 && col + 1 < m_cols && m_grid[row-1][col+1].isBomb()) valueCounter++;
-    if(col > 0 && row + 1 < m_rows && m_grid[row+1][col-1].isBomb()) valueCounter++;
-    if (m_grid[row][col].isBomb()) m_grid[row][col].setValue('X');
-    else if(valueCounter > 0) m_grid[row][col].setValue(valueCounter + '0');
-    else m_grid[row][col].setValue(' ');
-}
-
-void Board::bombOpened()
-{
-    activeBoard = false;
-    won = false;
-}
-
-void Board::flagCell(int row, int col)
-{
-    if(!m_grid[row][col].isOpened()) {
-        if(m_grid[row][col].getFlag()){
-            m_grid[row][col].setFlag(false);
-            bombsFlagged--;
-        }
-        else{
-            m_grid[row][col].setFlag(true);
-            bombsFlagged++;
-        }
-    }
-}
-
-void Board::processMove(int row, int col)
-{
-    if(checkMove(row, col)){
-        if(m_grid[row][col].getValue() == ' ') floodFill(row, col);
-        else m_grid[row][col].openCell();
-    }
-}
-
-bool Board::checkMove(int row, int col){
-    return (row >= 0 && row < m_rows && col >= 0 && col < m_cols && !m_grid[row][col].isOpened());
-}
-
-void Board::handleFirstClick(int row, int col){
-    int r = 0;
-    int c = 0;
-    srand(time(0));
-    bool** bombMatrix;
-    bombMatrix = new bool*[m_rows];
-    for(int i = 0; i < m_rows; i++){
-        bombMatrix[i] = new bool[m_cols]();
-    }
-    for(int i = 0; i < m_bombs; i++){
-        r = rand() % m_rows;
-        c = rand() % m_cols;
-        while(isNeighbor(r,c,row,col) || bombMatrix[r][c]){
-            r = rand() % m_rows;
-            c = rand() % m_cols;
-        }
-        bombMatrix[r][c] = true;
-    }
-
-    for(int i = 0; i < m_rows; i++){
-        for(int j = 0; j < m_cols; j++){
-            m_grid[i][j].setBomb(bombMatrix[i][j]);
-            m_grid[i][j].setBoard(this);
-        }
-    }
-    for(int i = 0; i < m_rows; i++){
-        for(int j = 0; j < m_cols; j++){
-            calculateValue(i, j);
-        }
-    }
-    floodFill(row, col);
-
-    for (int i = 0; i < m_rows; i++) {
-        delete[] bombMatrix[i];
-    }
-    delete[] bombMatrix;
-}
-
-void Board::floodFill(int row, int col)
-{
-    if(row < 0 || col < 0 || row >= m_rows || col >= m_cols || m_grid[row][col].isOpened() ||  m_grid[row][col].getFlag()) return;
-    m_grid[row][col].openCell();
-    if(m_grid[row][col].getValue() != ' ') return;
-    floodFill(row+1,col);
-    floodFill(row,col+1);
-    floodFill(row+1,col+1);
-    floodFill(row-1,col-1);   
-    floodFill(row,col-1); 
-    floodFill(row-1,col); 
-    floodFill(row-1,col+1);
-    floodFill(row+1,col-1); 
 }
 
 void drawBoxWithBorder(SDL_Renderer* renderer, SDL_Rect rect, SDL_Color fillColor, SDL_Color borderColor) {
@@ -361,69 +113,48 @@ void drawBackground(SDL_Renderer* renderer){
 
 }
 
-bool Board::stillPlaying()
-{
-    if(!activeBoard){
-        return false;
-    }
-    for(int i = 0; i < m_rows; i++){
-        for(int j = 0; j < m_cols; j++){
-            if(!m_grid[i][j].isOpened() && !m_grid[i][j].isBomb()){
-                return true;
-            }
-        }
-    }
-    won = true;
-    return false;
+string cellText(const Cell& cell){
+    if(!cell.isOpened()) return " ";
+    if(cell.isBomb()) return "X";
+    if(cell.getAdjacentBombs() == 0) return " ";
+    return to_string(cell.getAdjacentBombs());
 }
 
-void Board::displayBoard(SDL_Renderer* rend, TTF_Font* font){
+void displayBoard(Board* board, SDL_Renderer* rend, TTF_Font* font){
     SDL_Color b = {255,255,255,0};
     SDL_Color f = {0,0,0,0};
     SDL_Color color = {255,255,255,0};
+
     SDL_RenderClear(rend);
     drawBackground(rend);
-    string text = to_string(bombsFlagged);
+    string text = to_string(board->getFlagCount());
     int buffer = 0;
-    if(bombsFlagged > 9) buffer = 8;
+    if(board->getFlagCount() > 9) buffer = 8;
     renderText(rend, font, text, color, 155 - buffer, 88);
     color = {255,255,255,255};
-    for(int i = 0; i < 9; i++){
-        for(int j = 0; j < 9; j++){
+
+    for(int i = 0; i < ROW_COUNT; i++){
+        for(int j = 0; j < COL_COUNT; j++){
+            const Cell& cell = board->getCell(i, j);
             SDL_Rect box;
             box.x = 70 + j*53;
             box.y = 150 + i*53;
             box.w = 53;
             box.h = 53;
-            if(m_grid[i][j].getFlag()){
-                f = {255, 255, 255, 0}; 
+            if(cell.getFlag()){
+                f = {255, 255, 255, 0};
             }
-            else if(m_grid[i][j].isOpened()){
+            else if(cell.isOpened()){
                 f = {255, 0, 255, 0};
             }
-            else if (m_grid[i][j].isBomb()){
-                f  = {100, 100, 100, 0};
-            }
             else{
-                f = {0, 0, 255, 0};   
+                f = {0, 0, 255, 0};
             }
-            if(m_grid[i][j].isOpened())
-                text = string(1,m_grid[i][j].getValue());
-            else text = " ";
+            text = cellText(cell);
             drawBoxWithBorder(rend, box, f, b);
             renderText(rend, font, text, color, 77 + j*53, 157 + i*53);
         }
     }
-}
-
-bool Board::getWin()
-{
-    return won;
-}
-
-bool Board::isNeighbor(int r1, int c1, int r2, int c2)
-{
-    return (abs(r1 - r2) <= 1) && (abs(c1 - c2) <= 1);
 }
 
 bool translateMove(int x, int y, int &r, int &c){
@@ -436,6 +167,7 @@ bool translateMove(int x, int y, int &r, int &c){
 
 
 int main( int argc, char *argv[] ){
+   srand(time(0));
    SDL_Init(SDL_INIT_EVERYTHING);
    if (TTF_Init() < 0) {
         cerr << "TTF initialization failed: " << TTF_GetError() << endl;
@@ -452,8 +184,8 @@ int main( int argc, char *argv[] ){
     bool running = true;
     int r,c;
     Uint32 startTime = SDL_GetTicks();
-    while(running && board->stillPlaying()){
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+    while(running && board->getGameState() == GameState::Playing){
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
         while (SDL_PollEvent(&windowEvent)) {
             switch (windowEvent.type) {
@@ -465,7 +197,7 @@ int main( int argc, char *argv[] ){
                                 board->handleFirstClick(r,c);
                                 firstClick = false;
                             }
-                            board->processMove(r,c);
+                            else board->processMove(r,c);
                         } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
                             board->flagCell(r,c);
                         }
@@ -478,8 +210,8 @@ int main( int argc, char *argv[] ){
                 }
             }
         }
-        if(!board->stillPlaying()){
-            if(board->getWin()) cout << "You won";
+        if(board->getGameState() != GameState::Playing){
+            if(board->getGameState() == GameState::Won) cout << "You won";
             else cout << "You lost";
             running = false;
         }
@@ -488,14 +220,14 @@ int main( int argc, char *argv[] ){
         string timerTxt = to_string(elapsedTime/1000);
     
 
-
-        board->displayBoard(renderer, font);
+        displayBoard(board, renderer, font);
         SDL_Color timeColor = {255,255,255,255};
         renderText(renderer,font, timerTxt,timeColor, 505,88);
         SDL_RenderPresent(renderer);
     }
 
 
+    delete board;
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow( window );
     TTF_CloseFont(font);

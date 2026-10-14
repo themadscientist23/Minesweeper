@@ -12,5 +12,5 @@ add_executable(minesweeper src/gui.cpp)
 target_include_directories(minesweeper PRIVATE src)
 target_link_libraries(minesweeper PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
-add_executable(terminal src/terminal.cpp)
+add_executable(terminal src/terminal.cpp src/board.cpp src/cell.cpp)
 target_include_directories(terminal PRIVATE src)

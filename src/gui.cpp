@@ -214,9 +214,9 @@ int main(int argc, char *argv[]) {
         }
         if (board->getGameState() != GameState::Playing) {
             if (board->getGameState() == GameState::Won)
-                cout << "You won";
+                cout << "You won" << endl;
             else
-                cout << "You lost";
+                cout << "You lost" << endl;
             running = false;
         }
 

@@ -55,7 +55,20 @@ int main() {
             break;
         }
     }
-    cout << "Thanks for playing!";
+    cout << "Thanks for playing!" << endl;
+}
+
+// Reads "row col" as text, then converts. Bad input just returns false instead of breaking cin.
+bool readMove(int &r, int &c) {
+    string rowText, colText;
+    cin >> rowText >> colText;
+    try {
+        r = stoi(rowText);
+        c = stoi(colText);
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 char cellSymbol(const Cell &cell, bool reveal) {
@@ -182,17 +195,18 @@ void Game::play() {
     cout << "Make your move (row# col#): ";
     int r, c;
     string a;
-    cin >> r >> c;
-    while (m_board->handleFirstClick(r, c) == MoveResult::Invalid) {
+    while (!readMove(r, c) || m_board->handleFirstClick(r, c) == MoveResult::Invalid) {
         cout << "Not the right format (row #, space, then column #)" << endl;
         cout << "Try again: ";
-        cin >> r >> c;
     }
     checkGameState();
     displayBoard();
     while (!m_gameOver) {
         cout << "Make your move: row# col#: ";
-        cin >> r >> c;
+        if (!readMove(r, c)) {
+            cout << "Not the right format (row #, space, then column #)" << endl;
+            continue;
+        }
         if (r == 100) {
             quit();
             break;

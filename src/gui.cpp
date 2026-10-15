@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     bool firstClick = true;
     bool running = true;
     int r, c;
-    Uint32 startTime = SDL_GetTicks();
+    Uint32 startTime = 0;
     while (running && board->getGameState() == GameState::Playing) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
@@ -197,6 +197,7 @@ int main(int argc, char *argv[]) {
                         if (firstClick) {
                             board->handleFirstClick(r, c);
                             firstClick = false;
+                            startTime = SDL_GetTicks();
                         } else
                             board->processMove(r, c);
                     } else if (windowEvent.button.button == SDL_BUTTON_RIGHT) {
@@ -219,7 +220,9 @@ int main(int argc, char *argv[]) {
             running = false;
         }
 
-        Uint32 elapsedTime = SDL_GetTicks() - startTime;
+        Uint32 elapsedTime = 0;
+        if (!firstClick)
+            elapsedTime = SDL_GetTicks() - startTime;
         string timerTxt = to_string(elapsedTime / 1000);
 
         displayBoard(board, renderer, font);
